@@ -11,9 +11,12 @@ func ContextWithError(ctx context.Context, err error) context.Context {
 	return context.WithValue(ctx, errKey{}, err)
 }
 
+// ErrorFromContext returns any error from ctx.
+// If an error is present then its parsed and returned else nil is returned.
 func ErrorFromContext(ctx context.Context) error {
 	val := ctx.Value(errKey{})
 	if val != nil {
+		// safe data type conversion since values under the errKey are locked under ContextWithError.
 		return val.(error)
 	}
 	return nil
