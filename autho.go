@@ -5,14 +5,14 @@ import (
 	"time"
 )
 
-func NewApp(apps ...Registerer) RegistererFunc {
-	fn := func(mux Multiplexer) {
+func NewApp(apps ...registerer) registerer {
+	fn := func(mux multiplexer) {
 		for _, app := range apps {
 			app.Register(mux)
 		}
 	}
 
-	return RegistererFunc(fn)
+	return registererFunc(fn)
 }
 
 type CookieConfig struct {
@@ -46,7 +46,7 @@ func failureHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // App provides an abstraction from oauth 1 or 2 for each oauth aplication.
-type App struct {
+type app struct {
 	CallbackURL string
 	LoginURL    string
 
@@ -85,8 +85,8 @@ func newCookie(conf *CookieConfig) *http.Cookie {
 func NewProviderApp(
 	callbackURL, loginURL string,
 	callbackHandler, loginHandler http.Handler,
-) Registerer {
-	return &App{
+) registerer {
+	return &app{
 		CallbackURL:     callbackURL,
 		LoginURL:        loginURL,
 		CallbackHandler: callbackHandler,
@@ -94,7 +94,7 @@ func NewProviderApp(
 	}
 }
 
-func (a *App) Register(mux Multiplexer) {
+func (a *app) Register(mux multiplexer) {
 	// the url which the user hits and chains of the oauth2 flow.
 	mux.Handle(a.LoginURL, a.LoginHandler)
 
@@ -102,16 +102,16 @@ func (a *App) Register(mux Multiplexer) {
 	mux.Handle(a.CallbackURL, a.CallbackHandler)
 }
 
-type Multiplexer interface {
+type multiplexer interface {
 	Handle(string, http.Handler)
 }
 
-type Registerer interface {
-	Register(Multiplexer)
+type registerer interface {
+	Register(multiplexer)
 }
 
-type RegistererFunc func(Multiplexer)
+type registererFunc func(multiplexer)
 
-func (f RegistererFunc) Register(mux Multiplexer) {
+func (f registererFunc) Register(mux multiplexer) {
 	f(mux)
 }
