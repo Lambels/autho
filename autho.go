@@ -84,7 +84,7 @@ func newCookie(conf *CookieConfig) *http.Cookie {
 	}
 }
 
-// NewApp creates a new github oauth2 application.
+// NewApp creates a new provider application.
 func NewProviderApp(
 	callbackURL, loginURL string,
 	callbackHandler, loginHandler http.Handler,
