@@ -9,15 +9,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type OAuth2Config struct {
-	CkConfig  *CookieConfig
-	OAuthConf *oauth2.Config
-}
-
-func NewLoginHandler(cfg *OAuth2Config) http.HandlerFunc {
+func NewLoginHandler(ckCfg *CookieConfig, oauthCfg *oauth2.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get any existing cookie or create a new one.
-		ck := GetCookie(cfg.CkConfig, r)
+		ck := GetCookie(ckCfg, r)
 
 		// generate random state.
 		buf := make([]byte, 32)
@@ -30,12 +25,12 @@ func NewLoginHandler(cfg *OAuth2Config) http.HandlerFunc {
 		http.SetCookie(w, ck)
 		r = r.WithContext(ContextWithState(r.Context(), dst))
 
-		redirectURL := cfg.OAuthConf.AuthCodeURL(string(dst))
+		redirectURL := oauthCfg.AuthCodeURL(string(dst))
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	}
 }
 
-func NewTokenHandler(cfg *OAuth2Config, errHandler, callbackHandler http.Handler) http.Handler {
+func NewTokenHandler(cfg *oauth2.Config, errHandler, callbackHandler http.Handler) http.Handler {
 	if errHandler == nil {
 		errHandler = DefaultFailureHandle
 	}
@@ -72,7 +67,7 @@ func NewTokenHandler(cfg *OAuth2Config, errHandler, callbackHandler http.Handler
 		}
 
 		// exchange auth code for token.
-		token, err := cfg.OAuthConf.Exchange(r.Context(), authCode)
+		token, err := cfg.Exchange(r.Context(), authCode)
 		if err != nil {
 			r = r.WithContext(ContextWithError(r.Context(), err))
 			errHandler.ServeHTTP(w, r)
