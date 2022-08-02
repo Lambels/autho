@@ -6,15 +6,16 @@ import (
 
 	"github.com/Lambels/autho"
 	"github.com/google/go-github/v32/github"
+	"golang.org/x/oauth2"
 )
 
 var ErrNoGithubUser error = errors.New("unable to get github user")
 
-func NewLoginHandler(cfg *autho.OAuth2Config) http.Handler {
-	return autho.NewLoginHandler(cfg)
+func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.Handler {
+	return autho.NewLoginHandler(ckCfg, oauthCfg)
 }
 
-func NewTokenHandler(cfg *autho.OAuth2Config, errHandler, callbackHandler http.Handler) http.Handler {
+func NewTokenHandler(cfg *oauth2.Config, errHandler, callbackHandler http.Handler) http.Handler {
 	return autho.NewTokenHandler(cfg, errHandler, callbackHandler)
 }
 
@@ -22,7 +23,7 @@ func NewTokenHandler(cfg *autho.OAuth2Config, errHandler, callbackHandler http.H
 // the request context and calls the terminal handler.
 //
 // The user type used by the default CallbackHandler is: https://github.com/google/go-github
-func NewCallbackHandler(cfg *autho.OAuth2Config, errHandler, terminalHandler http.Handler) http.Handler {
+func NewCallbackHandler(cfg *oauth2.Config, errHandler, terminalHandler http.Handler) http.Handler {
 	if errHandler == nil {
 		errHandler = autho.DefaultFailureHandle
 	}
@@ -37,7 +38,7 @@ func NewCallbackHandler(cfg *autho.OAuth2Config, errHandler, terminalHandler htt
 
 		// create a client and validate response.
 		client := github.NewClient(
-			cfg.OAuthConf.Client(r.Context(), tkn),
+			cfg.Client(r.Context(), tkn),
 		)
 		user, resp, err := client.Users.Get(r.Context(), "")
 		if err != nil {
