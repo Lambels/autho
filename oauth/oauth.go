@@ -30,12 +30,29 @@ type App struct {
 	LoginHandler http.Handler
 }
 
+// NewApp creates a new github oauth2 application.
+func NewApp(
+	callbackURL, loginURL string,
+	callbackHandler, loginHandler http.Handler,
+) Registerer {
+	return &App{
+		CallbackURL:     callbackURL,
+		LoginURL:        loginURL,
+		CallbackHandler: callbackHandler,
+		LoginHandler:    loginHandler,
+	}
+}
+
 func (a *App) Register(mux Multiplexer) {
 	// the url which the user hits and chains of the oauth2 flow.
 	mux.Handle(a.LoginURL, a.LoginHandler)
 
 	// the callback url.
 	mux.Handle(a.CallbackURL, a.CallbackHandler)
+}
+
+type Multiplexer interface {
+	Handle(string, http.Handler)
 }
 
 type Registerer interface {
@@ -46,8 +63,4 @@ type RegistererFunc func(Multiplexer)
 
 func (f RegistererFunc) Register(mux Multiplexer) {
 	f(mux)
-}
-
-type Multiplexer interface {
-	Handle(string, http.Handler)
 }
