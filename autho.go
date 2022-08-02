@@ -1,9 +1,12 @@
 package autho
 
 import (
+	"errors"
 	"net/http"
 	"time"
 )
+
+var ErrNoUser error = errors.New("unable to get user from provider")
 
 func NewApp(apps ...registerer) registerer {
 	fn := func(mux multiplexer) {
