@@ -1,15 +1,12 @@
 package github
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/Lambels/autho"
 	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
 )
-
-var ErrNoGithubUser error = errors.New("unable to get github user")
 
 func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.Handler {
 	return autho.NewLoginHandler(ckCfg, oauthCfg)
@@ -47,12 +44,12 @@ func NewCallbackHandler(cfg *oauth2.Config, errHandler, terminalHandler http.Han
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
-			r = r.WithContext(autho.ContextWithError(r.Context(), ErrNoGithubUser))
+			r = r.WithContext(autho.ContextWithError(r.Context(), autho.ErrNoUser))
 			errHandler.ServeHTTP(w, r)
 			return
 		}
 		if user == nil || user.ID == nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), ErrNoGithubUser))
+			r = r.WithContext(autho.ContextWithError(r.Context(), autho.ErrNoUser))
 			errHandler.ServeHTTP(w, r)
 			return
 		}
