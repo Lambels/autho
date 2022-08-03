@@ -9,6 +9,10 @@ require (
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
+	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
+	github.com/dghubble/go-twitter v0.0.0-20220716041154-837915ec2f79 // indirect
+	github.com/dghubble/oauth1 v0.7.1 // indirect
+	github.com/dghubble/sling v1.4.0 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
