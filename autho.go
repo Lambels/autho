@@ -6,9 +6,13 @@ import (
 	"time"
 )
 
+// ErrNoUser represents the user handler not being able to reach the user resoursce.
 var ErrNoUser error = errors.New("unable to get user from provider")
 
-func NewApp(apps ...registerer) registerer {
+// DefaultFailureHandle sends a response with error code: 400 (Bad Request) and the error text.
+var DefaultFailureHandle http.HandlerFunc = failureHandler
+
+func NewApp(apps ...Registerer) Registerer {
 	fn := func(mux multiplexer) {
 		for _, app := range apps {
 			app.Register(mux)
@@ -16,6 +20,39 @@ func NewApp(apps ...registerer) registerer {
 	}
 
 	return registererFunc(fn)
+}
+
+// app provides an abstraction from oauth 1 or 2 for each oauth aplication.
+type app struct {
+	callbackURL string
+	loginURL    string
+
+	// entrypoint for: callbackURL
+	callbackHandler http.Handler
+
+	// entrypoint for: loginURL
+	loginHandler http.Handler
+}
+
+func (a *app) Register(mux multiplexer) {
+	// the url which the user hits and chains of the oauth2 flow.
+	mux.Handle(a.loginURL, a.loginHandler)
+
+	// the callback url.
+	mux.Handle(a.callbackURL, a.callbackHandler)
+}
+
+// NewProviderApp creates a new provider application.
+func NewProviderApp(
+	callbackURL, loginURL string,
+	callbackHandler, loginHandler http.Handler,
+) Registerer {
+	return &app{
+		callbackURL:     callbackURL,
+		loginURL:        loginURL,
+		callbackHandler: callbackHandler,
+		loginHandler:    loginHandler,
+	}
 }
 
 type CookieConfig struct {
@@ -34,32 +71,6 @@ type CookieConfig struct {
 	Secure bool
 	// HttpOnly indicates to the browser if the cookie is accessable by client-side scripts.
 	HttpOnly bool
-}
-
-// DefaultFailureHandle sends a response with error code: 400 (Bad Request) and the error text.
-var DefaultFailureHandle http.HandlerFunc = failureHandler
-
-func failureHandler(w http.ResponseWriter, r *http.Request) {
-	if err := ErrorFromContext(r.Context()); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	http.Error(w, "", http.StatusBadRequest)
-}
-
-// App provides an abstraction from oauth 1 or 2 for each oauth aplication.
-type app struct {
-	CallbackURL string
-	LoginURL    string
-
-	// entrypoint for: callbackURL
-	// responsible for validating state and obtaining token and passing token to callback handler.
-	CallbackHandler http.Handler
-
-	// entrypoint for: loginURL
-	// responsible for setting state cookie and redirecting flow to oauth2 provider.
-	LoginHandler http.Handler
 }
 
 func GetCookie(conf *CookieConfig, r *http.Request) *http.Cookie {
@@ -84,32 +95,20 @@ func newCookie(conf *CookieConfig) *http.Cookie {
 	}
 }
 
-// NewApp creates a new provider application.
-func NewProviderApp(
-	callbackURL, loginURL string,
-	callbackHandler, loginHandler http.Handler,
-) registerer {
-	return &app{
-		CallbackURL:     callbackURL,
-		LoginURL:        loginURL,
-		CallbackHandler: callbackHandler,
-		LoginHandler:    loginHandler,
+func failureHandler(w http.ResponseWriter, r *http.Request) {
+	if err := ErrorFromContext(r.Context()); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
-}
 
-func (a *app) Register(mux multiplexer) {
-	// the url which the user hits and chains of the oauth2 flow.
-	mux.Handle(a.LoginURL, a.LoginHandler)
-
-	// the callback url.
-	mux.Handle(a.CallbackURL, a.CallbackHandler)
+	http.Error(w, "", http.StatusBadRequest)
 }
 
 type multiplexer interface {
 	Handle(string, http.Handler)
 }
 
-type registerer interface {
+type Registerer interface {
 	Register(multiplexer)
 }
 
