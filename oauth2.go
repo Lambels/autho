@@ -30,7 +30,7 @@ func NewLoginHandler(ckCfg *CookieConfig, oauthCfg *oauth2.Config) http.HandlerF
 	}
 }
 
-func NewTokenHandler(cfg *oauth2.Config, errHandler, callbackHandler http.Handler) http.Handler {
+func NewTokenHandler(cfg *oauth2.Config, errHandler, userHandler http.Handler) http.Handler {
 	if errHandler == nil {
 		errHandler = DefaultFailureHandle
 	}
@@ -75,7 +75,7 @@ func NewTokenHandler(cfg *oauth2.Config, errHandler, callbackHandler http.Handle
 		}
 
 		r = r.WithContext(ContextWithToken(r.Context(), token))
-		callbackHandler.ServeHTTP(w, r)
+		userHandler.ServeHTTP(w, r)
 	}
 
 	return http.HandlerFunc(fn)
