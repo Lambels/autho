@@ -4,17 +4,18 @@ import (
 	"net/http"
 
 	"github.com/Lambels/autho"
+	autho2 "github.com/Lambels/autho/oauth2"
 	"golang.org/x/oauth2"
 	googleOauth "google.golang.org/api/oauth2/v2"
 )
 
-// NewDefaultCallbackHandler is a helper function that constructs
+// NewCallbackHandler is a helper function that constructs
 // a new callback handler using the default token handler google.NewTokenHandler()
 // wrapped arround the default google.NewUserHandler().
 //
 // This method saves allot of boilerplate. For more customisable handlers construct your
 // own callback handler by wrapping it around your own specific token handler.
-func NewDefaultCallbackHandler(oauthCfg *oauth2.Config, errHandler, terminalHandler http.Handler) http.Handler {
+func NewCallbackHandler(oauthCfg *oauth2.Config, errHandler, terminalHandler http.Handler) http.Handler {
 	return NewTokenHandler(
 		oauthCfg,
 		errHandler,
@@ -30,7 +31,7 @@ func NewDefaultCallbackHandler(oauthCfg *oauth2.Config, errHandler, terminalHand
 // value (state) to the request context and state cookie. Afterwards the login handler is also
 // responsible for redirecting the user to the provider for the users grant.
 func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.Handler {
-	return autho.NewLoginHandler(ckCfg, oauthCfg)
+	return autho2.NewLoginHandler(ckCfg, oauthCfg)
 }
 
 // NewTokenHandler creates a new TokenHandler which is the first handler in the chain responding
@@ -39,7 +40,7 @@ func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.Ha
 // TokenHandler performs the token exchange and adds the token to the request context, calling on
 // success the UserHandler.
 func NewTokenHandler(cfg *oauth2.Config, errHandler, userHandler http.Handler) http.Handler {
-	return autho.NewTokenHandler(cfg, errHandler, userHandler)
+	return autho2.NewTokenHandler(cfg, errHandler, userHandler)
 }
 
 // NewUserHandler creates a new google UserHandler resposnible for using the tokens provided
@@ -55,7 +56,7 @@ func NewUserHandler(cfg *oauth2.Config, errHandler, terminalHandler http.Handler
 	}
 
 	f := func(w http.ResponseWriter, r *http.Request) {
-		tkn, err := autho.TokenFromContext(r.Context())
+		tkn, err := autho2.TokenFromContext(r.Context())
 		if err != nil {
 			r = r.WithContext(autho.ContextWithError(r.Context(), err))
 			errHandler.ServeHTTP(w, r)
