@@ -54,15 +54,13 @@ func NewTokenHandler(cfg *oauth1.Config, ckCfg *autho.CookieConfig, errHandler, 
 
 		var reqSecret string
 		if ckCfg != nil {
-			ck, ckErr := r.Cookie(ckCfg.Name)
-			reqSecret, err = ck.Value, ckErr
-		} else {
-			reqSecret, err = "", nil
-		}
-		if err != nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), err))
-			errHandler.ServeHTTP(w, r)
-			return
+			ck, err := r.Cookie(ckCfg.Name)
+			if err != nil {
+				r = r.WithContext(autho.ContextWithError(r.Context(), err))
+				errHandler.ServeHTTP(w, r)
+				return
+			}
+			reqSecret = ck.Value
 		}
 
 		accessToken, accessSecret, err := cfg.AccessToken(reqToken, reqSecret, verifier)
