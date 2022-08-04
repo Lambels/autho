@@ -7,7 +7,7 @@ import (
 )
 
 // ErrNoUser represents the user handler not being able to reach the user resoursce.
-var ErrNoUser error = errors.New("unable to get user from provider")
+var ErrNoUser error = errors.New("autho: unable to get user from provider")
 
 // DefaultFailureHandle sends a response with error code: 400 (Bad Request) and the error text.
 var DefaultFailureHandle http.HandlerFunc = failureHandler
