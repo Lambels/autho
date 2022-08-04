@@ -10,6 +10,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// NewLoginHandler creates a new LoginHandler which is resposible for setting a random
+// value (state) to the state cookie. Afterwards the login handler is also
+// responsible for redirecting the user to the provider for the users grant.
+//
+// LoginHandler -> Provider (obtain grant)
 func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get any existing cookie or create a new one.
@@ -24,7 +29,6 @@ func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.Ha
 
 		// set state.
 		http.SetCookie(w, ck)
-		r = r.WithContext(ContextWithState(r.Context(), dst))
 
 		// redirect to provider url.
 		redirectURL := oauthCfg.AuthCodeURL(string(dst))
@@ -32,7 +36,14 @@ func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.Ha
 	}
 }
 
-func NewTokenHandler(cfg *oauth2.Config, errHandler, userHandler http.Handler) http.Handler {
+// NewTokenHandler creates a new TokenHandler which is the first handler in the chain responding
+// to the callback from the provider, it is responsible for parsing the response for auth code
+// and state then comparing the cookie state with the request state. Following the parsing the
+// TokenHandler performs the token exchange and adds the token to the request context, calling on
+// success the UserHandler.
+//
+// Provider -> TokenHandler -> UserHandler -> TermnialHandler
+func NewTokenHandler(cfg *oauth2.Config, ckCfg *autho.CookieConfig, errHandler, userHandler http.Handler) http.Handler {
 	if errHandler == nil {
 		errHandler = autho.DefaultFailureHandle
 	}
@@ -48,13 +59,13 @@ func NewTokenHandler(cfg *oauth2.Config, errHandler, userHandler http.Handler) h
 		authCode := r.Form.Get("code")
 
 		if state == "" || authCode == "" {
-			r = r.WithContext(autho.ContextWithError(r.Context(), errors.New("auth code or state missing.")))
+			r = r.WithContext(autho.ContextWithError(r.Context(), errors.New("autho: auth code or state missing.")))
 			errHandler.ServeHTTP(w, r)
 			return
 		}
 
-		// grab request state.
-		requestState, err := StateFromContext(r.Context())
+		// grab state cookie.
+		ck, err := r.Cookie(ckCfg.Name)
 		if err != nil {
 			r = r.WithContext(autho.ContextWithError(r.Context(), err))
 			errHandler.ServeHTTP(w, r)
@@ -62,8 +73,8 @@ func NewTokenHandler(cfg *oauth2.Config, errHandler, userHandler http.Handler) h
 		}
 
 		// validate any state mismatch.
-		if state != string(requestState) {
-			r = r.WithContext(autho.ContextWithError(r.Context(), errors.New("request state and response state mismatch.")))
+		if state != string(ck.Value) {
+			r = r.WithContext(autho.ContextWithError(r.Context(), errors.New("autho: request state and response state mismatch.")))
 			errHandler.ServeHTTP(w, r)
 			return
 		}
