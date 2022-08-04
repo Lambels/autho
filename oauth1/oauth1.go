@@ -20,6 +20,12 @@ func NewLoginHandler(cfg *oauth1.Config, ckCfg *autho.CookieConfig, errHandler h
 			return
 		}
 
+		if ckCfg != nil {
+			ck := autho.GetCookie(ckCfg, r)
+			ck.Value = reqSecret
+			http.SetCookie(w, ck)
+		}
+
 		authURL, err := cfg.AuthorizationURL(reqToken)
 		if err != nil {
 			r = r.WithContext(autho.ContextWithError(r.Context(), err))
@@ -27,12 +33,6 @@ func NewLoginHandler(cfg *oauth1.Config, ckCfg *autho.CookieConfig, errHandler h
 			return
 		}
 
-		if ckCfg != nil {
-			ck := autho.GetCookie(ckCfg, r)
-			ck.Value = reqSecret
-			http.SetCookie(w, ck)
-		}
-		r = r.WithContext(ContextWithRequestSecret(r.Context(), reqSecret))
 		http.Redirect(w, r, authURL.String(), http.StatusFound)
 	}
 
@@ -57,7 +57,7 @@ func NewTokenHandler(cfg *oauth1.Config, ckCfg *autho.CookieConfig, errHandler, 
 			ck, ckErr := r.Cookie(ckCfg.Name)
 			reqSecret, err = ck.Value, ckErr
 		} else {
-			reqSecret, err = RequestSecretFromContext(r.Context())
+			reqSecret, err = "", nil
 		}
 		if err != nil {
 			r = r.WithContext(autho.ContextWithError(r.Context(), err))
