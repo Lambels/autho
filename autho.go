@@ -12,6 +12,13 @@ var ErrNoUser error = errors.New("autho: unable to get user from provider")
 // DefaultFailureHandle sends a response with error code: 400 (Bad Request) and the error text.
 var DefaultFailureHandle http.HandlerFunc = failureHandler
 
+// NewApp creates a new autho app which consists of multiple providers (OAuth 1 or 2),
+// the new app is used to register the providers' callback and login URL to the provided
+// multiplexer.
+//
+//	mux := http.NewServeMux()
+//	app := autho.NewApp()
+//	app.Register(mux)
 func NewApp(apps ...Registerer) Registerer {
 	fn := func(mux multiplexer) {
 		for _, app := range apps {
@@ -34,8 +41,9 @@ type app struct {
 	loginHandler http.Handler
 }
 
+// Register registers the callback and login URL to mux.
 func (a *app) Register(mux multiplexer) {
-	// the url which the user hits and chains of the oauth2 flow.
+	// the url which the user hits and chains of the oauth flow.
 	mux.Handle(a.loginURL, a.loginHandler)
 
 	// the callback url.
@@ -55,6 +63,8 @@ func NewProviderApp(
 	}
 }
 
+// CookieConfig represents a config used by handlers to create cookies throughout the
+// oauth flow.
 type CookieConfig struct {
 	// Name sets the name of the cookie.
 	Name string
@@ -73,6 +83,8 @@ type CookieConfig struct {
 	HttpOnly bool
 }
 
+// GetCookie gets a cookie from the request if possible or returns a new cookie
+// structured after the config.
 func GetCookie(conf *CookieConfig, r *http.Request) *http.Cookie {
 	cookie, err := r.Cookie(conf.Name)
 	if err != nil {
