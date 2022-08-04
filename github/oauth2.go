@@ -15,12 +15,12 @@ import (
 //
 // This method saves allot of boilerplate. For more customisable handlers construct your
 // own callback handler by wrapping it around your own specific token handler.
-func NewCallbackHandler(oauthCfg *oauth2.Config, errHandler, terminalHandler http.Handler) http.Handler {
+func NewCallbackHandler(cfg *oauth2.Config, errHandler, terminalHandler http.Handler) http.Handler {
 	return NewTokenHandler(
-		oauthCfg,
+		cfg,
 		errHandler,
 		NewUserHandler(
-			oauthCfg,
+			cfg,
 			errHandler,
 			terminalHandler,
 		),
