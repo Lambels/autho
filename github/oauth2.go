@@ -15,9 +15,10 @@ import (
 //
 // This method saves allot of boilerplate. For more customisable handlers construct your
 // own callback handler by wrapping it around your own specific token handler.
-func NewCallbackHandler(cfg *oauth2.Config, errHandler, terminalHandler http.Handler) http.Handler {
+func NewCallbackHandler(cfg *oauth2.Config, ckCfg *autho.CookieConfig, errHandler, terminalHandler http.Handler) http.Handler {
 	return NewTokenHandler(
 		cfg,
+		ckCfg,
 		errHandler,
 		NewUserHandler(
 			cfg,
@@ -28,7 +29,7 @@ func NewCallbackHandler(cfg *oauth2.Config, errHandler, terminalHandler http.Han
 }
 
 // NewLoginHandler creates a new LoginHandler which is resposible for setting a random
-// value (state) to the request context and state cookie. Afterwards the login handler is also
+// value (state) to the state cookie. Afterwards the login handler is also
 // responsible for redirecting the user to the provider for the users grant.
 func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.Handler {
 	return autho2.NewLoginHandler(ckCfg, oauthCfg)
@@ -36,11 +37,11 @@ func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.Ha
 
 // NewTokenHandler creates a new TokenHandler which is the first handler in the chain responding
 // to the callback from the provider, it is responsible for parsing the response for auth code
-// and state then comparing the ctx state with the request state. Following the parsing the
+// and state then comparing the cookie state with the request state. Following the parsing the
 // TokenHandler performs the token exchange and adds the token to the request context, calling on
 // success the UserHandler.
-func NewTokenHandler(cfg *oauth2.Config, errHandler, callbackHandler http.Handler) http.Handler {
-	return autho2.NewTokenHandler(cfg, errHandler, callbackHandler)
+func NewTokenHandler(cfg *oauth2.Config, ckCfg *autho.CookieConfig, errHandler, callbackHandler http.Handler) http.Handler {
+	return autho2.NewTokenHandler(cfg, ckCfg, errHandler, callbackHandler)
 }
 
 // NewUserHandler creates a new github UserHandler resposnible for using the tokens provided
