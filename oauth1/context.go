@@ -7,20 +7,6 @@ import (
 	"github.com/dghubble/oauth1"
 )
 
-type requestSecretKey struct{}
-
-func ContextWithRequestSecret(ctx context.Context, secret string) context.Context {
-	return context.WithValue(ctx, requestSecretKey{}, secret)
-}
-
-func RequestSecretFromContext(ctx context.Context) (secret string, err error) {
-	secret, ok := ctx.Value(requestSecretKey{}).(string)
-	if !ok {
-		return "", errors.New("request secret not set")
-	}
-	return secret, nil
-}
-
 type tokenKey struct{}
 
 func RequestWithToken(ctx context.Context, token *oauth1.Token) context.Context {
