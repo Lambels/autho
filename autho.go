@@ -107,6 +107,13 @@ func newCookie(conf *CookieConfig) *http.Cookie {
 	}
 }
 
+// PassError is a helper function which passes err to the error handler via the ContextWithError
+// method.
+func PassError(err error, errHandler http.Handler, w http.ResponseWriter, r *http.Request) {
+	errCtx := ContextWithError(r.Context(), err)
+	errHandler.ServeHTTP(w, r.WithContext(errCtx))
+}
+
 func failureHandler(w http.ResponseWriter, r *http.Request) {
 	if err := ErrorFromContext(r.Context()); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
