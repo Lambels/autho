@@ -83,6 +83,26 @@ type CookieConfig struct {
 	HttpOnly bool
 }
 
+func NewDebugCookieConfig(name string) *CookieConfig {
+	return &CookieConfig{
+		Name:     name,
+		Path:     "/",
+		MaxAge:   60,
+		Secure:   false,
+		HttpOnly: true,
+	}
+}
+
+func NewProductionCookieConfig(name string) *CookieConfig {
+	return &CookieConfig{
+		Name:     name,
+		Path:     "/",
+		MaxAge:   60,
+		Secure:   true,
+		HttpOnly: true,
+	}
+}
+
 // GetCookie gets a cookie from the request if possible or returns a new cookie
 // structured after the config.
 func GetCookie(conf *CookieConfig, r *http.Request) *http.Cookie {
