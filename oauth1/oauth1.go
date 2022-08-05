@@ -22,8 +22,7 @@ func NewLoginHandler(cfg *oauth1.Config, ckCfg *autho.CookieConfig, errHandler h
 	f := func(w http.ResponseWriter, r *http.Request) {
 		reqToken, reqSecret, err := cfg.RequestToken()
 		if err != nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), err))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(err, errHandler, w, r)
 			return
 		}
 
@@ -37,8 +36,7 @@ func NewLoginHandler(cfg *oauth1.Config, ckCfg *autho.CookieConfig, errHandler h
 
 		authURL, err := cfg.AuthorizationURL(reqToken)
 		if err != nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), err))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(err, errHandler, w, r)
 			return
 		}
 
@@ -67,8 +65,7 @@ func NewTokenHandler(cfg *oauth1.Config, ckCfg *autho.CookieConfig, errHandler, 
 	f := func(w http.ResponseWriter, r *http.Request) {
 		reqToken, verifier, err := oauth1.ParseAuthorizationCallback(r)
 		if err != nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), err))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(err, errHandler, w, r)
 			return
 		}
 
@@ -77,8 +74,7 @@ func NewTokenHandler(cfg *oauth1.Config, ckCfg *autho.CookieConfig, errHandler, 
 		if ckCfg != nil {
 			ck, err := r.Cookie(ckCfg.Name)
 			if err != nil {
-				r = r.WithContext(autho.ContextWithError(r.Context(), err))
-				errHandler.ServeHTTP(w, r)
+				autho.PassError(err, errHandler, w, r)
 				return
 			}
 			reqSecret = ck.Value
@@ -86,14 +82,13 @@ func NewTokenHandler(cfg *oauth1.Config, ckCfg *autho.CookieConfig, errHandler, 
 
 		accessToken, accessSecret, err := cfg.AccessToken(reqToken, reqSecret, verifier)
 		if err != nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), err))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(err, errHandler, w, r)
 			return
 		}
 
 		tkn := oauth1.NewToken(accessToken, accessSecret)
-		r = r.WithContext(RequestWithToken(r.Context(), tkn))
-		userHandler.ServeHTTP(w, r)
+		tknCtx := ContextWithToken(r.Context(), tkn)
+		userHandler.ServeHTTP(w, r.WithContext(tknCtx))
 	}
 
 	return http.HandlerFunc(f)

@@ -14,7 +14,7 @@ import (
 // wrapped arround the default github.NewUserHandler().
 //
 // This method saves allot of boilerplate. For more customisable handlers construct your
-// own callback handler by wrapping it around your own specific token handler.
+// own callback handler by wrapping your own specific token handler around your own specific user handler.
 func NewCallbackHandler(cfg *oauth2.Config, ckCfg *autho.CookieConfig, errHandler, terminalHandler http.Handler) http.Handler {
 	return NewTokenHandler(
 		cfg,
@@ -59,8 +59,7 @@ func NewUserHandler(cfg *oauth2.Config, errHandler, terminalHandler http.Handler
 	f := func(w http.ResponseWriter, r *http.Request) {
 		tkn, err := autho2.TokenFromContext(r.Context())
 		if err != nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), err))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(err, errHandler, w, r)
 			return
 		}
 
@@ -70,23 +69,20 @@ func NewUserHandler(cfg *oauth2.Config, errHandler, terminalHandler http.Handler
 		)
 		user, resp, err := client.Users.Get(r.Context(), "")
 		if err != nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), err))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(err, errHandler, w, r)
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
-			r = r.WithContext(autho.ContextWithError(r.Context(), autho.ErrNoUser))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(autho.ErrNoUser, errHandler, w, r)
 			return
 		}
 		if user == nil || user.ID == nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), autho.ErrNoUser))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(autho.ErrNoUser, errHandler, w, r)
 			return
 		}
 
-		r = r.WithContext(autho.ContextWithUser(r.Context(), user))
-		terminalHandler.ServeHTTP(w, r)
+		userCtx := autho.ContextWithUser(r.Context(), user)
+		terminalHandler.ServeHTTP(w, r.WithContext(userCtx))
 	}
 
 	return http.HandlerFunc(f)

@@ -51,45 +51,40 @@ func NewTokenHandler(cfg *oauth2.Config, ckCfg *autho.CookieConfig, errHandler, 
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		// parse auth code and state for token exchange.
 		if err := r.ParseForm(); err != nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), err))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(err, errHandler, w, r)
 			return
 		}
 		state := r.Form.Get("state")
 		authCode := r.Form.Get("code")
 
 		if state == "" || authCode == "" {
-			r = r.WithContext(autho.ContextWithError(r.Context(), errors.New("autho: auth code or state missing.")))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(errors.New("autho: auth code or state missing."), errHandler, w, r)
 			return
 		}
 
 		// grab state cookie.
 		ck, err := r.Cookie(ckCfg.Name)
 		if err != nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), err))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(err, errHandler, w, r)
 			return
 		}
 
 		// validate any state mismatch.
 		if state != string(ck.Value) {
-			r = r.WithContext(autho.ContextWithError(r.Context(), errors.New("autho: request state and response state mismatch.")))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(errors.New("autho: request state and response state mismatch."), errHandler, w, r)
 			return
 		}
 
 		// exchange auth code for token.
-		token, err := cfg.Exchange(r.Context(), authCode)
+		tkn, err := cfg.Exchange(r.Context(), authCode)
 		if err != nil {
-			r = r.WithContext(autho.ContextWithError(r.Context(), err))
-			errHandler.ServeHTTP(w, r)
+			autho.PassError(err, errHandler, w, r)
 			return
 		}
 
 		// redirect to user handler.
-		r = r.WithContext(ContextWithToken(r.Context(), token))
-		userHandler.ServeHTTP(w, r)
+		tknCtx := ContextWithToken(r.Context(), tkn)
+		userHandler.ServeHTTP(w, r.WithContext(tknCtx))
 	}
 
 	return http.HandlerFunc(fn)
