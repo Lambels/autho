@@ -9,10 +9,10 @@ import (
 
 type tokenKey struct{}
 
-// RequestWithToken is used by the token handler (default: oauth1.NewTokenHandler()) to
+// ContextWithToken is used by the token handler (default: oauth1.NewTokenHandler()) to
 // set the oauth1 tokens under the context to be used by the user handler in exchange for
 // the user resource.
-func RequestWithToken(ctx context.Context, tkn *oauth1.Token) context.Context {
+func ContextWithToken(ctx context.Context, tkn *oauth1.Token) context.Context {
 	return context.WithValue(ctx, tokenKey{}, tkn)
 }
 
