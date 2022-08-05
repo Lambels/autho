@@ -30,8 +30,8 @@ func NewCallbackHandler(cfg *oauth2.Config, ckCfg *autho.CookieConfig, errHandle
 // NewLoginHandler creates a new LoginHandler which is resposible for setting a random
 // value (state) to the state cookie. Afterwards the login handler is also
 // responsible for redirecting the user to the provider for the users grant.
-func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.Handler {
-	return autho2.NewLoginHandler(ckCfg, oauthCfg)
+func NewLoginHandler(cfg *oauth2.Config, ckCfg *autho.CookieConfig) http.Handler {
+	return autho2.NewLoginHandler(cfg, ckCfg)
 }
 
 // NewTokenHandler creates a new TokenHandler which is the first handler in the chain responding

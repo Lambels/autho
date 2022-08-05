@@ -15,7 +15,7 @@ import (
 // responsible for redirecting the user to the provider for the users grant.
 //
 // LoginHandler -> Provider (obtain grant)
-func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.HandlerFunc {
+func NewLoginHandler(cfg *oauth2.Config, ckCfg *autho.CookieConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get any existing cookie or create a new one.
 		ck := autho.GetCookie(ckCfg, r)
@@ -31,7 +31,7 @@ func NewLoginHandler(ckCfg *autho.CookieConfig, oauthCfg *oauth2.Config) http.Ha
 		http.SetCookie(w, ck)
 
 		// redirect to provider url.
-		redirectURL := oauthCfg.AuthCodeURL(string(dst))
+		redirectURL := cfg.AuthCodeURL(string(dst))
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	}
 }
