@@ -8,6 +8,25 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// NewCallbackHandler is a helper function that constructs
+// a new callback handler using the default token handler bitly.NewTokenHandler()
+// wrapped arround the default bitly.NewUserHandler().
+//
+// This method saves allot of boilerplate. For more customisable handlers construct your
+// own callback handler by wrapping your own specific token handler around your own specific user handler.
+func NewCallbackHandler(cfg *oauth2.Config, ckCfg *autho.CookieConfig, errHandler, terminalHandler http.Handler) http.Handler {
+	return NewTokenHandler(
+		cfg,
+		ckCfg,
+		errHandler,
+		NewUserHandler(
+			cfg,
+			errHandler,
+			terminalHandler,
+		),
+	)
+}
+
 // NewLoginHandler creates a new LoginHandler which is resposible for setting a random
 // value (state) to the state cookie. Afterwards the login handler is also
 // responsible for redirecting the user to the provider for the users grant.
