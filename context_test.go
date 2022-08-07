@@ -22,15 +22,11 @@ func TestContextWithUser(t *testing.T) {
 		name: "testing",
 	}
 	ctx := ContextWithUser(context.Background(), expectedUser)
-	user, err := UserFromContext(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	gotUser, ok := user.(*userType)
+	gotUser, ok := UserFromContext(ctx).(*userType)
 	if !ok {
-		t.Fatal("expected user to be set")
+		t.Fatal("couldnt parse return value")
 	}
 	if gotUser.name != expectedUser.name {
-		t.Fatalf("expected user name to be testing but got %s", gotUser.name)
+		t.Fatalf("expected user name: testing but got %s", gotUser.name)
 	}
 }
