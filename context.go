@@ -2,7 +2,6 @@ package autho
 
 import (
 	"context"
-	"errors"
 )
 
 type errKey struct{}
@@ -31,14 +30,8 @@ func ContextWithUser(ctx context.Context, user interface{}) context.Context {
 }
 
 // UserFromContext harvests the user struct from the request context.
-// When the struct is returned if no error is present
-// parse it to the specific user you are expecting from the user handler (check your providers
-// user handler for extra info)
-func UserFromContext(ctx context.Context) (interface{}, error) {
-	user := ctx.Value(userKey{})
-	if user == nil {
-		return nil, errors.New("autho: user parameter not ser")
-	}
-
-	return user, nil
+// Parse the return value to the specific user you are expecting from the user handler with
+// the , ok idiom. If !ok then no user is set. (check your providers user handler for user type)
+func UserFromContext(ctx context.Context) interface{} {
+	return ctx.Value(userKey{})
 }
